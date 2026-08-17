@@ -23,7 +23,7 @@ export const createUser = async (req, res) => {
         const token = jwt.sign({ id: userId }, process.env.JWT_SECRET);
         res.cookie("token", token);
 
-        res.status(200).json({ message: "New user created" });
+        res.status(201).json({ message: "New user created" });
     } catch (error) {
         console.error(error.message);
         if (error.code === 'ER_DUP_ENTRY') {

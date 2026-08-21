@@ -18,12 +18,21 @@ export const createUser = async (req, res) => {
         const userId = uuid();
         const hash = await bcrypt.hash(password, 10);
         const insertSql = 'INSERT INTO users (id,name,email,password) VALUES (?,?,?,?)';
-        const [insertResult] = await db.execute(insertSql, [userId, name, email, hash]);
+        await db.execute(insertSql, [userId, name, email, hash]);
 
         const token = jwt.sign({ id: userId }, process.env.JWT_SECRET);
         res.cookie("token", token);
 
-        res.status(201).json({ message: "New user created" });
+        res.status(201).json({
+            status: 201,
+            message: "New user created",
+            token: token,
+            user: {
+                id: userId,
+                name: name,
+                email: email
+            }
+        });
     } catch (error) {
         console.error(error.message);
         if (error.code === 'ER_DUP_ENTRY') {
@@ -54,7 +63,16 @@ export const loginUser = async (req, res) => {
 
         res.cookie("token", token);
 
-        res.status(200).json({ message: "User login successfull" });
+        res.status(200).json({
+            status: 200,
+            message: "User login successfull",
+            token: token,
+            user: {
+                id: existingUser[0].id,
+                name: existingUser[0].name,
+                email: existingUser[0].email
+            }
+        });
     } catch (error) {
         console.error(error.message);
         res.status(500).json({ error: "Failed to login user" });

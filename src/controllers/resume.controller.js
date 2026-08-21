@@ -42,7 +42,7 @@ export const uploadResume = async (req, res) => {
         const insertSql = 'INSERT INTO resumes (id,user_id,original_filename,raw_text,structured_data) VALUES (?,?,?,?,?)';
         await db.execute(insertSql, [resumeId, userId, original_filename, rawText, JSON.stringify(structuredData)]);
 
-        res.status(200).json({ message: "Data parsed and successfully added to Database" });
+        res.status(201).json({ message: "Data parsed and successfully added to Database" });
     } catch (error) {
         if (req.file?.path) await unlink(req.file.path).catch(() => { });
         console.error(error);
@@ -75,7 +75,7 @@ export const uploadJd = async (req, res) => {
         const insertSql = 'INSERT INTO job_descriptions (id,user_id,job_title,company_name,raw_text,structured_data) VALUES (?,?,?,?,?,?)';
         await db.execute(insertSql, [jdId, userId, job_title?.trim() || "Untitled JD", company_name?.trim() || "Not provided", jd, structuredJdData]);
 
-        res.status(200).json({ message: "JD parsed and successfully uploaded" });
+        res.status(201).json({ message: "JD parsed and successfully uploaded" });
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Failed to process job description' });

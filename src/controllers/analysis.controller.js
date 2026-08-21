@@ -45,9 +45,35 @@ export const getAnalysis = async (req, res) => {
         const insertSql = 'INSERT INTO analyses (id,user_id,resume_id,jd_id,match_score,matched_skills,missing_skills,partial_matches,suggestions) VALUES (?,?,?,?,?,?,?,?,?)';
         await db.execute(insertSql, [analysisId, userId, resumeId, jdId, gapAnalysisResult.match_score, gapAnalysisResult.matched_skills, gapAnalysisResult.missing_skills, gapAnalysisResult.partial_matches, gapAnalysisResult.suggestions]);
 
-        res.status(201).json({ status: 201, message: "Analysis generated", analysis: gapAnalysisResult });
+        const [analysisResult] = await db.execute('SELECT * FROM analyses WHERE id = ?', [analysisId]);
+        res.status(201).json({
+            status: 201,
+            message: "Analysis generated",
+            data: analysisResult[0]
+        });
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: "Failed to generate gap analysis" });
+    }
+}
+
+export const getAllAnalyses = async (req, res) => {
+    try {
+        const userId = req.user.id;
+
+        const [allAnalyses] = await db.execute('SELECT * FROM analyses WHERE user_id = ?', [userId]);
+
+        if (allAnalyses.length == 0) {
+            return res.status(409).json({ message: 'No gap analyses found' });
+        }
+
+        res.status(200).json({
+            status: 200,
+            message: "All gap analyses fetched",
+            data: allAnalyses
+        });
+    } catch (error) {
+        console.error(error.message);
+        res.status(500).json({ error: "Failed to fetch gap analyses" });
     }
 }

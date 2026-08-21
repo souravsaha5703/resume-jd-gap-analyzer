@@ -2,7 +2,7 @@ import { v4 as uuid } from 'uuid';
 import { pool as db } from '../db/db.js';
 import { PDFParse } from 'pdf-parse';
 import { readFile, unlink } from 'node:fs/promises';
-import { generateStructuredDataFromResume } from '../services/generateStructuredData.service.js';
+import { generateStructuredDataFromResume, generateStructuredDataFromJd } from '../services/generateStructuredData.service.js';
 
 export const uploadResume = async (req, res) => {
     try {
@@ -18,13 +18,10 @@ export const uploadResume = async (req, res) => {
         const rawText = typeof parsedResult === 'string'
             ? parsedResult
             : (parsedResult.text || parsedResult.pages?.map(p => p.text).join('\n') || '');
-        console.log("Data parsed");
 
         await unlink(req.file.path);
 
         const structuredData = await generateStructuredDataFromResume(rawText);
-        console.log("structured data completed");
-
 
         await db.query(`
             CREATE TABLE IF NOT EXISTS resumes(
@@ -50,5 +47,37 @@ export const uploadResume = async (req, res) => {
         if (req.file?.path) await unlink(req.file.path).catch(() => { });
         console.error(error);
         res.status(500).json({ error: 'Failed to process and save resume' });
+    }
+}
+
+export const uploadJd = async (req, res) => {
+    const { jd, job_title, company_name } = req.body;
+
+    try {
+        const structuredJdData = await generateStructuredDataFromJd(jd);
+
+        await db.query(`
+            CREATE TABLE IF NOT EXISTS job_descriptions(
+                id VARCHAR(36) PRIMARY KEY,
+                user_id VARCHAR(36) NOT NULL,
+                job_title VARCHAR(100),
+                company_name VARCHAR(100),
+                raw_text TEXT,
+                structured_data JSON,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            )
+        `);
+
+        const jdId = uuid();
+        const userId = req.user.id;
+        const insertSql = 'INSERT INTO job_descriptions (id,user_id,job_title,company_name,raw_text,structured_data) VALUES (?,?,?,?,?,?)';
+        await db.execute(insertSql, [jdId, userId, job_title?.trim() || "Untitled JD", company_name?.trim() || "Not provided", jd, structuredJdData]);
+
+        res.status(200).json({ message: "JD parsed and successfully uploaded" });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Failed to process job description' });
     }
 }

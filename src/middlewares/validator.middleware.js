@@ -42,3 +42,12 @@ export const validateLoginUser = [
         .isLength({ min: 8 }).withMessage('Password must be at least 8 characters long'),
     validateResult
 ]
+
+export const validateJdUpload = [
+    body("jd")
+        .isString()
+        .trim()
+        .notEmpty().withMessage("Job description is required")
+        .isLength({ min: 50 }).withMessage("Job description must be detailed"),
+    validateResult
+]

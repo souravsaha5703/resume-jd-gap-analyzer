@@ -1,12 +1,15 @@
 import express from 'express';
 import multer from 'multer';
-import { uploadResume } from '../controllers/resume.controller.js';
+import { uploadResume, uploadJd } from '../controllers/resume.controller.js';
 import { verifyUser } from '../middlewares/auth.middleware.js';
+import { validateJdUpload } from '../middlewares/validator.middleware.js';
 
 const router = express.Router();
 
 const upload = multer({ dest: "uploads/" });
 
 router.post('/upload', verifyUser, upload.single('resume'), uploadResume);
+
+router.post('/jd-upload', verifyUser, validateJdUpload, uploadJd);
 
 export default router;

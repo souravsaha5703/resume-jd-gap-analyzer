@@ -42,11 +42,35 @@ export const uploadResume = async (req, res) => {
         const insertSql = 'INSERT INTO resumes (id,user_id,original_filename,raw_text,structured_data) VALUES (?,?,?,?,?)';
         await db.execute(insertSql, [resumeId, userId, original_filename, rawText, JSON.stringify(structuredData)]);
 
-        res.status(201).json({ message: "Data parsed and successfully added to Database" });
+        res.status(201).json({
+            status: 201,
+            message: "Data parsed and successfully added to Database"
+        });
     } catch (error) {
         if (req.file?.path) await unlink(req.file.path).catch(() => { });
         console.error(error);
         res.status(500).json({ error: 'Failed to process and save resume' });
+    }
+}
+
+export const getAllResumes = async (req, res) => {
+    try {
+        const userId = req.user.id;
+
+        const [allResumes] = await db.execute('SELECT * FROM resumes WHERE user_id = ?', [userId]);
+
+        if (allResumes.length == 0) {
+            return res.status(409).json({ message: 'No resume found' });
+        }
+
+        res.status(200).json({
+            status: 200,
+            message: "All resume fetched",
+            allResumes
+        });
+    } catch (error) {
+        console.error(error.message);
+        res.status(500).json({ error: "Failed to fetch resumes" });
     }
 }
 
@@ -79,5 +103,26 @@ export const uploadJd = async (req, res) => {
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Failed to process job description' });
+    }
+}
+
+export const getAllJds = async (req, res) => {
+    try {
+        const userId = req.user.id;
+
+        const [allJds] = await db.execute('SELECT * FROM job_descriptions WHERE user_id = ?', [userId]);
+
+        if (allJds.length == 0) {
+            return res.status(409).json({ message: 'No job description found' });
+        }
+
+        res.status(200).json({
+            status: 200,
+            message: "All job descriptions fetched",
+            allJds
+        });
+    } catch (error) {
+        console.error(error.message);
+        res.status(500).json({ error: "Failed to fetch job descriptions" });
     }
 }

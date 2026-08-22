@@ -28,7 +28,7 @@ export const getAnalysis = async (req, res) => {
         const analysisId = uuid();
         const userId = req.user.id;
         const insertSql = 'INSERT INTO analyses (id,user_id,resume_id,jd_id,match_score,matched_skills,missing_skills,partial_matches,suggestions) VALUES (?,?,?,?,?,?,?,?,?)';
-        await db.execute(insertSql, [analysisId, userId, resumeId, jdId, gapAnalysisResult.match_score, gapAnalysisResult.matched_skills, gapAnalysisResult.missing_skills, gapAnalysisResult.partial_matches, gapAnalysisResult.suggestions]);
+        await db.execute(insertSql, [analysisId, userId, resumeId, jdId, gapAnalysisResult.match_score, JSON.stringify(gapAnalysisResult.matched_skills), JSON.stringify(gapAnalysisResult.missing_skills), JSON.stringify(gapAnalysisResult.partial_matches), JSON.stringify(gapAnalysisResult.suggestions)]);
 
         const [analysisResult] = await db.execute('SELECT * FROM analyses WHERE id = ?', [analysisId]);
         res.status(201).json({

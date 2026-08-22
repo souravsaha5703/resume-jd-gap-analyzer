@@ -2,6 +2,7 @@ import { v4 as uuid } from 'uuid';
 import { pool as db } from '../db/db.js';
 import { PDFParse } from 'pdf-parse';
 import { readFile, unlink } from 'node:fs/promises';
+import { uploadFile } from '../services/storage.service.js';
 import { generateStructuredDataFromResume, generateStructuredDataFromJd } from '../services/generateStructuredData.service.js';
 
 export const uploadResume = async (req, res) => {
@@ -10,6 +11,7 @@ export const uploadResume = async (req, res) => {
             return res.status(400).json({ error: 'No PDF file uploaded' });
         }
         const original_filename = req.file.originalname;
+        const fileKey = `${uuid()}-${original_filename}`;
         const bufferData = await readFile(req.file.path);
         const uint8ArrayData = new Uint8Array(bufferData.buffer, bufferData.byteOffset, bufferData.byteLength);
 
@@ -21,11 +23,13 @@ export const uploadResume = async (req, res) => {
 
         await unlink(req.file.path);
 
+        await uploadFile(bufferData, fileKey, req.file.mimetype);
+
         const structuredData = await generateStructuredDataFromResume(rawText);
         const resumeId = uuid();
         const userId = req.user.id;
         const insertSql = 'INSERT INTO resumes (id,user_id,original_filename,raw_text,structured_data) VALUES (?,?,?,?,?)';
-        await db.execute(insertSql, [resumeId, userId, original_filename, rawText, JSON.stringify(structuredData)]);
+        await db.execute(insertSql, [resumeId, userId, fileKey, rawText, JSON.stringify(structuredData)]);
 
         res.status(201).json({
             status: 201,
@@ -67,7 +71,7 @@ export const uploadJd = async (req, res) => {
         const jdId = uuid();
         const userId = req.user.id;
         const insertSql = 'INSERT INTO job_descriptions (id,user_id,job_title,company_name,raw_text,structured_data) VALUES (?,?,?,?,?,?)';
-        await db.execute(insertSql, [jdId, userId, job_title?.trim() || "Untitled JD", company_name?.trim() || "Not provided", jd, structuredJdData]);
+        await db.execute(insertSql, [jdId, userId, job_title?.trim() || "Untitled JD", company_name?.trim() || "Not provided", jd, JSON.stringify(structuredJdData)]);
 
         res.status(201).json({ message: "JD parsed and successfully uploaded" });
     } catch (error) {

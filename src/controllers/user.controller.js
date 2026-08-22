@@ -6,15 +6,6 @@ import jwt from 'jsonwebtoken';
 export const createUser = async (req, res) => {
     const { name, email, password } = req.body;
     try {
-        await db.query(`
-            CREATE TABLE IF NOT EXISTS users(
-                id VARCHAR(36) PRIMARY KEY,
-                name VARCHAR(100),
-                email VARCHAR(100) UNIQUE,
-                password VARCHAR(255) NOT NULL
-            )
-        `);
-
         const userId = uuid();
         const hash = await bcrypt.hash(password, 10);
         const insertSql = 'INSERT INTO users (id,name,email,password) VALUES (?,?,?,?)';

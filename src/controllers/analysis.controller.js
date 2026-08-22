@@ -6,7 +6,7 @@ export const getAnalysis = async (req, res) => {
     const { resumeId, jdId } = req.body;
 
     if (!resumeId || !jdId) {
-        res.status(400).json({ error: "resumeId and jobDescriptionId are required" });
+        return res.status(400).json({ error: "resumeId and jobDescriptionId are required" });
     }
 
     try {
@@ -20,26 +20,11 @@ export const getAnalysis = async (req, res) => {
             return res.status(404).json({ error: "Job description not found" });
         }
 
+        if (!existingResume[0].structured_data || !existingJd[0].structured_data) {
+            return res.status(400).json({ error: "Resume or job description has not finished processing yet" });
+        }
+
         const gapAnalysisResult = await generateStructuredAnalysis(existingResume[0].structured_data, existingJd[0].structured_data);
-
-        await db.query(`
-            CREATE TABLE IF NOT EXISTS analyses(
-                id VARCHAR(36) PRIMARY KEY,
-                user_id VARCHAR(36) NOT NULL,
-                resume_id VARCHAR(36) NOT NULL,
-                jd_id VARCHAR(36) NOT NULL,
-                match_score INT,
-                matched_skills JSON,
-                missing_skills JSON,
-                partial_matches JSON,
-                suggestions JSON,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-
-                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-                FOREIGN KEY (resume_id) REFERENCES resumes(id) ON DELETE CASCADE,
-                FOREIGN KEY (jd_id) REFERENCES job_descriptions(id) ON DELETE CASCADE
-            )
-        `);
         const analysisId = uuid();
         const userId = req.user.id;
         const insertSql = 'INSERT INTO analyses (id,user_id,resume_id,jd_id,match_score,matched_skills,missing_skills,partial_matches,suggestions) VALUES (?,?,?,?,?,?,?,?,?)';

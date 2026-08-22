@@ -14,6 +14,6 @@ router.get('/resumes', verifyUser, getAllResumes);
 
 router.post('/jd-upload', verifyUser, validateJdUpload, uploadJd);
 
-router.get('/jds',verifyUser,getAllJds);
+router.get('/jds', verifyUser, getAllJds);
 
 export default router;
